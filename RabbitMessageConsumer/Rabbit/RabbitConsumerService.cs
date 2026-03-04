@@ -15,8 +15,8 @@ public class RabbitConsumerService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        const string exchangeName = "Test-Exchange-1";
-        const string queueName = "Test-Queue-1.1a";
+        const string exchangeName = "Test-Exchange-2";
+        const string queueName = "Test-Queue-2.1a";
         const string exchangeType = "fanout"; 
 
         _channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);

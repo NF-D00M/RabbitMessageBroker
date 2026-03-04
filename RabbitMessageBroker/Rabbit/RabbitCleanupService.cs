@@ -1,21 +1,38 @@
 ﻿using RabbitMessageBroker.Models;
+using System.Buffers.Text;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
 
-public class RabbitCleanupService
+public class RabbitCleanupService : IHostedService
 {
-    private readonly HttpClient _httpClient;
+    private readonly IConfiguration _config;
+    private  HttpClient _httpClient;
 
-    public RabbitCleanupService(string baseUrl, string username, string password)
+    public RabbitCleanupService(IConfiguration config)
     {
+        _config = config;
+        
+    }
+
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        await CleanupInactiveAsync();
+    }
+
+    public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
+
+    public async Task CleanupInactiveAsync()
+    {
+        string? baseUrl = _config["Rabbit:ManagementUrl"];
+        string? username = _config["Rabbit:ManagementUser"];
+        string? password = _config["Rabbit:ManagementPassword"];
+
         _httpClient = new HttpClient();
         _httpClient.BaseAddress = new Uri(baseUrl);
         byte[] byteArray = System.Text.Encoding.ASCII.GetBytes($"{username}:{password}");
         _httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Basic", Convert.ToBase64String(byteArray));
-    }
 
-    public async Task CleanupInactiveAsync()
-    {
         // Cleanup Queues
         HttpResponseMessage queuesResponse = await _httpClient.GetAsync("/api/queues");
         string queuesJson = await queuesResponse.Content.ReadAsStringAsync();
