@@ -11,7 +11,6 @@ This project demonstrates how to integrate RabbitMQ as a message broker within a
 ## Configuring Exchanges and Queues
 
 To add exchanges and queues, update your application configuration (e.g., `appsettings.json`):
-```json { "RabbitMQ": { "Host": "localhost", "Username": "guest", "Password": "guest", "Exchange": "test-exchange", "Queue": "test-queue", "RoutingKey": "test-routing-key" } } ```
 
 ## Testing Message Publishing
 
