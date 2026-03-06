@@ -17,53 +17,47 @@ public class RabbitConsumerService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        string? exchangeName = _config.GetSection("Rabbit:Exchanges:0:Name").Value;
+        // Retrieve queue from config
         string? queueName = _config.GetSection("Rabbit:Exchanges:0:Queues:0").Value;
-        string exchangeType = "fanout"; 
+
+        // Check if Rabbit is connected
+        if (_connection == null || !_connection.IsOpen)
+        {
+            Console.WriteLine("[CRITICAL ERROR] RabbitMQ Connection failed: The broker is unreachable.");
+            return;
+        }
 
         _channel = await _connection.CreateChannelAsync(cancellationToken: stoppingToken);
 
-        // Declare the exchange
-        await _channel.ExchangeDeclareAsync(
-            exchange: exchangeName,
-            type: exchangeType,
-            durable: false, 
-            autoDelete: false,
-            cancellationToken: stoppingToken
-        );
+        try
+        {
+            // 2. Check if Queue exists (Passive declaration)
+            await _channel.QueueDeclarePassiveAsync(queue: queueName, cancellationToken: stoppingToken);
+        }
+        catch (RabbitMQ.Client.Exceptions.OperationInterruptedException)
+        {
+            Console.WriteLine($"[CRITICAL ERROR] RabbitMQ Topology Error: The queue '{queueName}' does not exist.");
+            return;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"[CRITICAL ERROR] Unexpected error: {ex.Message}");
+            return;
+        }
 
-        Dictionary<string, object> args = new Dictionary<string, object> { { "x-max-priority", 10 } };
-
-        // Declare the queue
-        await _channel.QueueDeclareAsync(
-            queue: queueName,
-            durable: true,
-            exclusive: false,
-            autoDelete: false,
-            arguments: args, // <--- Pass the dictionary here
-            cancellationToken: stoppingToken
-        );
-
-        // Bind the queue to the exchange
-        await _channel.QueueBindAsync(
-            queue: queueName,
-            exchange: exchangeName,
-            routingKey: "", 
-            cancellationToken: stoppingToken
-        );
-
-        await _channel.BasicQosAsync(0, 1, false, stoppingToken);
+        // Set Quality of Service prefetch for priority processing
+        await _channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false, cancellationToken: stoppingToken);
 
         AsyncEventingBasicConsumer consumer = new AsyncEventingBasicConsumer(_channel);
         consumer.ReceivedAsync += async (model, ea) =>
         {
             byte[] body = ea.Body.ToArray();
             string message = Encoding.UTF8.GetString(body);
-            Console.WriteLine($"" +
-                $"{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff} | " +
-                $"{AppDomain.CurrentDomain.FriendlyName} | " +
-                $"{nameof(RabbitConsumerService)} | " +
-                $"ReceivedAsync : Exchange: {ea.Exchange}, Queue: {queueName}, Message: {message}, Priority {ea.BasicProperties.Priority}");
+            Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} | " +
+                  $"{AppDomain.CurrentDomain.FriendlyName} | " +
+                  $"{nameof(ExecuteAsync)} | " +
+                  $"Received: {message} | " +
+                  $"Priority: {ea.BasicProperties.Priority}");
             await Task.CompletedTask;
         };
 
@@ -74,6 +68,8 @@ public class RabbitConsumerService : BackgroundService
             cancellationToken: stoppingToken
         );
 
+        // Keep the service alive
         await Task.Delay(Timeout.Infinite, stoppingToken);
     }
+
 }

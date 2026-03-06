@@ -34,4 +34,34 @@ This project is designed to evaluate and compare the performance of two popular 
 
 ---
 
+## RabbitMQ Usage Guide
+
+To use RabbitMQ in this project:
+
+1. **Start RabbitMessageBroker first.**
+   - This service must be running before any consumers connect.
+
+2. **Configure exchanges and queues in `appsettings.json`.**
+   - Define your exchanges and queues in the configuration file for RabbitMessageBroker.
+
+3. **Run RabbitMessageConsumer.**
+   - The consumer connects to a queue. Ensure the queue exists in RabbitMessageBroker.
+
+4. **Test publishing messages to an exchange:**
+   - Example endpoint:
+     - `https://localhost:7277/rabbit/publish/exchange/Test-Exchange-1`
+   - Example payload:
+     ```json
+     {
+       "message": "This message is from Postman",
+       "priority": 10
+     }
+     ```
+
+5. **Message Priority Behavior:**
+   - Try publishing messages while RabbitMessageConsumer is down.
+   - When you start RabbitMessageConsumer, notice that messages with higher priority are received first.
+
+---
+
 Explore the repository to review implementation details, performance benchmarks, and integration examples for both RabbitMQ and Kafka within .NET 9.

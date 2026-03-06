@@ -1,15 +1,32 @@
+using RabbitMQ.Client;
 using RabbitMessageBroker.RabbitMQ;
 
 var builder = WebApplication.CreateBuilder(args);
 
-builder.Services.AddRabbitMQ("127.0.0.1");
-builder.Services.AddHostedService<RabbitCleanupService>();
-builder.Services.AddHostedService<RabbitConsumerService>();
+// Add Rabbit MQ Service
+builder.Services.AddSingleton(sp =>
+{
+    var factory = new ConnectionFactory { HostName = "127.0.0.1" };
 
+    return factory.CreateConnectionAsync().GetAwaiter().GetResult();
+});
+
+builder.Services.AddSingleton<IMessageBroker, RabbitBroker>();
+
+// Add Controllers
 builder.Services.AddControllers();
 
-WebApplication app = builder.Build();
+var app = builder.Build();
 
-app.MapControllers(); 
+// Intitalise Rabbit Exchanges and Queues on Startup
+using (IServiceScope scope = app.Services.CreateScope())
+{
+    IMessageBroker broker = scope.ServiceProvider.GetRequiredService<IMessageBroker>();
 
+    await broker.InitializeDefinitionsAsync();
+
+    Console.WriteLine("RabbitMQ Initialised.");
+}
+
+app.MapControllers();
 app.Run();

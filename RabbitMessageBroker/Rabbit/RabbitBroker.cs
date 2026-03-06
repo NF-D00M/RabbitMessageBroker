@@ -20,23 +20,25 @@ public class RabbitBroker : IMessageBroker
     {
         using IChannel channel = await _connection.CreateChannelAsync();
 
+        // Create Exchange if it doens't exist
         await channel.ExchangeDeclareAsync(
             exchange: exchangeName,
-            type: "fanout", 
-            durable: false,
-            autoDelete: false
-        );
+            type: ExchangeType.Fanout,
+            durable: true, 
+            autoDelete: false);
 
         byte[] body = message is string str
             ? Encoding.UTF8.GetBytes(str)
             : JsonSerializer.SerializeToUtf8Bytes(message);
 
-        BasicProperties properties = new BasicProperties
+        // Set priority in properties
+        var properties = new BasicProperties
         {
             Priority = priority,
-            Persistent = true 
+            Persistent = true
         };
 
+        // Publish message to queue with priority
         await channel.BasicPublishAsync(
             exchange: exchangeName,
             routingKey: string.Empty,
@@ -46,56 +48,51 @@ public class RabbitBroker : IMessageBroker
         );
     }
 
-    public async Task SubscribeAsync<T>(string destination, Func<T, BasicDeliverEventArgs, Task> handler)
+   
+    public async Task InitializeDefinitionsAsync()
     {
-        IChannel channel = await _connection.CreateChannelAsync();
+        using IChannel channel = await _connection.CreateChannelAsync();
 
+        // Get list of Exchanges
         var exchanges = _config.GetSection("Rabbit:Exchanges").Get<List<Exchange>>();
 
-        await channel.QueueDeclareAsync(
-            queue: destination,
-            durable: false,
-            exclusive: false,
-            autoDelete: false);
+        if (exchanges == null) return;
 
-        foreach (var exchange in exchanges)
+        // Define priority arguments (Max 10)
+        Dictionary<string, object> queueArgs = new Dictionary<string, object> { { "x-max-priority", 10 } };
+
+        foreach (Exchange exchange in exchanges)
         {
+            // Declare exchange if it doesn't exist
             await channel.ExchangeDeclareAsync(
                 exchange: exchange.Name,
-                type: "fanout", 
-                durable: false,
+                type: ExchangeType.Fanout,
+                durable: true,
                 autoDelete: false);
 
-            await channel.QueueBindAsync(
-                queue: destination,
-                exchange: exchange.Name,
-                routingKey: "" 
-            );
+            // Loop through each queue defined for this exchange
+            if (exchange.Queues != null)
+            {
+                foreach (string queueName in exchange.Queues)
+                {
+                    // Declare the Queue with priority support
+                    await channel.QueueDeclareAsync(
+                        queue: queueName,
+                        durable: true,
+                        exclusive: false,
+                        autoDelete: false,
+                        arguments: queueArgs
+                    );
+
+                    // Bind queue to exchange
+                    await channel.QueueBindAsync(
+                        queue: queueName,
+                        exchange: exchange.Name,
+                        routingKey: string.Empty
+                    );
+                }
+            }
         }
-
-        AsyncEventingBasicConsumer consumer = new AsyncEventingBasicConsumer(channel);
-
-        consumer.ReceivedAsync += async (model, ea) =>
-        {
-            byte[] body = ea.Body.ToArray();
-            T? message;
-            if (typeof(T) == typeof(string))
-            {
-                object? str = Encoding.UTF8.GetString(body);
-                message = (T?)str;
-            }
-            else
-            {
-                string messageJson = Encoding.UTF8.GetString(body);
-                message = JsonSerializer.Deserialize<T>(messageJson);
-            }
-
-            if (message != null)
-            {
-                await handler(message, ea);
-            }
-        };
-
-        await channel.BasicConsumeAsync(queue: destination, autoAck: true, consumer: consumer);
     }
+
 }
