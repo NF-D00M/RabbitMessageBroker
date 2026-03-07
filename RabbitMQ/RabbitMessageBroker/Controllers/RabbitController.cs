@@ -26,7 +26,7 @@ namespace RabbitMessageBroker.Controllers
         [HttpPost("publish/exchange/{exchangeString}")]
         public async Task<IActionResult> PublishExchange(string exchangeString, [FromBody] PublishRequest message)
         {
-            // Get Exchange
+            // Get Exchange from config
             List<Exchange>? exchanges = _config.GetSection("Rabbit:Exchanges").Get<List<Exchange>>();
             Exchange? exchange = exchanges?.FirstOrDefault(e => e.Name == exchangeString);
 

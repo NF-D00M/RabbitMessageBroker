@@ -1,6 +1,5 @@
 ﻿using RabbitMQ.Client;
 using RabbitMQ.Client.Events;
-using Microsoft.Extensions.Hosting;
 using System.Text;
 
 public class RabbitConsumerService : BackgroundService
@@ -17,10 +16,17 @@ public class RabbitConsumerService : BackgroundService
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        // Retrieve queue from config
-        string? queueName = _config.GetSection("Rabbit:Exchanges:0:Queues:0").Value;
+        // Get exchange and queue from config
+        string? exchangeName = _config.GetSection("Rabbit:Exchanges:0:Name").Value;
+        string? queueName = _config.GetSection("Rabbit:Exchanges:0:Queue:Name").Value;
 
-        // Check if Rabbit is connected
+        if (string.IsNullOrEmpty(exchangeName) || string.IsNullOrEmpty(queueName))
+        {
+            Console.WriteLine("[ERROR] Configuration missing for Exchange or Queue.");
+            return;
+        }
+
+        // Check if Rabbit is active 
         if (_connection == null || !_connection.IsOpen)
         {
             Console.WriteLine("[CRITICAL ERROR] RabbitMQ Connection failed: The broker is unreachable.");
@@ -31,21 +37,43 @@ public class RabbitConsumerService : BackgroundService
 
         try
         {
-            // 2. Check if Queue exists (Passive declaration)
-            await _channel.QueueDeclarePassiveAsync(queue: queueName, cancellationToken: stoppingToken);
+            // Check if Exchange exists (passive declaration)
+            await _channel.ExchangeDeclarePassiveAsync(exchange: exchangeName, cancellationToken: stoppingToken);
+            Console.WriteLine($"[OK] Exchange '{exchangeName}' verified.");
+
+            // Declare Queue 
+            // Create queue if queue doesn't exist
+            await _channel.QueueDeclareAsync(
+                queue: queueName,
+                durable: true,
+                exclusive: false,
+                autoDelete: false,
+                arguments: new Dictionary<string, object?> { { "x-max-priority", 10 } },
+                cancellationToken: stoppingToken
+            );
+
+            // 5. Bind Queue to Exchange
+            await _channel.QueueBindAsync(
+                queue: queueName,
+                exchange: exchangeName,
+                routingKey: string.Empty,
+                cancellationToken: stoppingToken
+            );
+
+            Console.WriteLine($"[OK] Queue '{queueName}' bound to '{exchangeName}'.");
         }
         catch (RabbitMQ.Client.Exceptions.OperationInterruptedException)
         {
-            Console.WriteLine($"[CRITICAL ERROR] RabbitMQ Topology Error: The queue '{queueName}' does not exist.");
+            Console.WriteLine($"[CRITICAL ERROR] Topology Error: The exchange '{exchangeName}' does not exist. Consumer cannot subscribe.");
             return;
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"[CRITICAL ERROR] Unexpected error: {ex.Message}");
+            Console.WriteLine($"[CRITICAL ERROR] Unexpected error during setup: {ex.Message}");
             return;
         }
 
-        // Set Quality of Service prefetch for priority processing
+        // Consumer prefetch (limit number of unacknowledged messages: 1)
         await _channel.BasicQosAsync(prefetchSize: 0, prefetchCount: 1, global: false, cancellationToken: stoppingToken);
 
         AsyncEventingBasicConsumer consumer = new AsyncEventingBasicConsumer(_channel);
@@ -56,8 +84,11 @@ public class RabbitConsumerService : BackgroundService
             Console.WriteLine($"{DateTime.Now:HH:mm:ss.fff} | " +
                   $"{AppDomain.CurrentDomain.FriendlyName} | " +
                   $"{nameof(ExecuteAsync)} | " +
+                  $"Exchange: {exchangeName} | " +
+                  $"Queue: {queueName} | " +
                   $"Received: {message} | " +
-                  $"Priority: {ea.BasicProperties.Priority}");
+                  $"Priority: {ea.BasicProperties.Priority}"
+            );
             await Task.CompletedTask;
         };
 
@@ -68,8 +99,6 @@ public class RabbitConsumerService : BackgroundService
             cancellationToken: stoppingToken
         );
 
-        // Keep the service alive
         await Task.Delay(Timeout.Infinite, stoppingToken);
     }
-
 }

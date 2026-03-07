@@ -1,6 +1,6 @@
 using RabbitMQ.Client;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddSingleton(sp =>
 {
@@ -12,7 +12,7 @@ builder.Services.AddHostedService<RabbitConsumerService>();
 
 builder.Services.AddControllers();
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
 app.MapControllers();
 

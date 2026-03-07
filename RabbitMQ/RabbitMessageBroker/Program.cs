@@ -1,12 +1,15 @@
 using RabbitMQ.Client;
 using RabbitMessageBroker.RabbitMQ;
 
-var builder = WebApplication.CreateBuilder(args);
+WebApplicationBuilder builder = WebApplication.CreateBuilder(args);
 
 // Add Rabbit MQ Service
 builder.Services.AddSingleton(sp =>
 {
-    var factory = new ConnectionFactory { HostName = "127.0.0.1" };
+    ConnectionFactory factory = new ConnectionFactory 
+    { 
+        HostName = "127.0.0.1" 
+    };
 
     return factory.CreateConnectionAsync().GetAwaiter().GetResult();
 });
@@ -16,9 +19,9 @@ builder.Services.AddSingleton<IMessageBroker, RabbitBroker>();
 // Add Controllers
 builder.Services.AddControllers();
 
-var app = builder.Build();
+WebApplication app = builder.Build();
 
-// Intitalise Rabbit Exchanges and Queues on Startup
+// Initialise Rabbit Exchanges and Queues on Startup
 using (IServiceScope scope = app.Services.CreateScope())
 {
     IMessageBroker broker = scope.ServiceProvider.GetRequiredService<IMessageBroker>();
