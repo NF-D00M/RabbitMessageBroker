@@ -12,6 +12,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMessageBroker", "Rabb
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RabbitMessageConsumer", "RabbitMQ\RabbitMessageConsumer\RabbitMessageConsumer.csproj", "{06BCFD5F-B716-8BDA-27E8-724325D4D746}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "KafkaMessageBroker", "Kafka\KafkaMessageBroker\KafkaMessageBroker.csproj", "{1B5EC4BE-EC25-4CE0-B971-C554DE69D597}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -26,6 +28,10 @@ Global
 		{06BCFD5F-B716-8BDA-27E8-724325D4D746}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{06BCFD5F-B716-8BDA-27E8-724325D4D746}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{06BCFD5F-B716-8BDA-27E8-724325D4D746}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1B5EC4BE-EC25-4CE0-B971-C554DE69D597}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1B5EC4BE-EC25-4CE0-B971-C554DE69D597}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1B5EC4BE-EC25-4CE0-B971-C554DE69D597}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1B5EC4BE-EC25-4CE0-B971-C554DE69D597}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

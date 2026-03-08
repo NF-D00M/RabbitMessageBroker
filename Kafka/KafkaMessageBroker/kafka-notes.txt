@@ -1,0 +1,18 @@
+Cluster Id : 7gRgZRMOSS6PMXh-S_DlzA
+
+Format: .\kafka-storage.bat format -t 7gRgZRMOSS6PMXh-S_DlzA -c C:\kafka_2.13-4.2.0\config\server.properties
+
+Start : .\kafka-server-start.bat C:\kafka_2.13-4.2.0\config\server.properties
+
+Kafka running in KRaft mode (not zookeeper)
+
+Kafka is headless (does not have a qui)
+- Add Provectus for a dashboard
+
+Get Topics  : C:\kafka_2.13-4.2.0\bin\windows\kafka-topics.bat --list --bootstrap-server localhost:9092
+
+Listen to Topic : C:\kafka_2.13-4.2.0\bin\windows\kafka-console-consumer.bat --topic test-topic --from-beginning --bootstrap-server localhost:9092
+
+Send Message to Topic : C:\kafka_2.13-4.2.0\bin\windows\kafka-console-producer.bat --topic test-topic --bootstrap-server localhost:9092
+
+Delete Topic : C:\kafka_2.13-4.2.0\bin\windows\kafka-topics.bat --delete --topic test-topic --bootstrap-server localhost:9092
