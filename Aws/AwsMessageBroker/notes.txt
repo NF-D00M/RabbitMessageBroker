@@ -1,0 +1,10 @@
+Aws will check stored credentials in .aws file, does not require repetitive handling of keys
+
+Check if topic exists
+-- aws sns list-topics --query "Topics[].TopicArn" --output table
+
+Check if queues exist
+-- aws sqs list-queues
+
+Check if queue has policy attached
+-- aws sqs get-queue-attributes --queue-url https://sqs.ap-southeast-4.amazonaws.com/191343360290/aws-topic-sqs-consumer --attribute-names Policy
