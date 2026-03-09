@@ -34,6 +34,42 @@ This project is designed to evaluate and compare the performance of two popular 
 
 ---
 
+## When to Prefer RabbitMQ or Kafka
+
+**RabbitMQ** is ideal when you need:
+- Flexible routing and message patterns (direct, topic, fanout, headers)
+- Reliable transactional messaging and strong delivery guarantees
+- Simple integration and management with a user-friendly UI
+- Use cases like task queues, transactional workflows, or RPC
+
+**Kafka** is preferred when you need:
+- High throughput and scalability for large data streams
+- Event sourcing, log aggregation, or real-time analytics
+- Built-in message replay and long-term storage
+- Distributed, fault-tolerant architecture for parallel processing
+
+Choose RabbitMQ for traditional messaging scenarios and complex routing. Choose Kafka for scalable event streaming and analytics.
+
+---
+
+## When to Prefer RabbitMQ or Kafka
+
+**RabbitMQ** is ideal when you need:
+- Flexible routing and message patterns (direct, topic, fanout, headers)
+- Reliable transactional messaging and strong delivery guarantees
+- Simple integration and management with a user-friendly UI
+- Use cases like task queues, transactional workflows, or RPC
+
+**Kafka** is preferred when you need:
+- High throughput and scalability for large data streams
+- Event sourcing, log aggregation, or real-time analytics
+- Built-in message replay and long-term storage
+- Distributed, fault-tolerant architecture for parallel processing
+
+Choose RabbitMQ for traditional messaging scenarios and complex routing. Choose Kafka for scalable event streaming and analytics.
+
+---
+
 ## RabbitMQ Usage Guide
 
 ### Prerequisites 
