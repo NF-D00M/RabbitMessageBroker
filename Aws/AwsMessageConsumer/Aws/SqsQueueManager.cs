@@ -1,4 +1,5 @@
 ﻿using Amazon.SimpleNotificationService;
+using Amazon.SimpleNotificationService.Model;
 using Amazon.SQS;
 using Amazon.SQS.Model;
 
@@ -33,17 +34,17 @@ public class SqsQueueManager
 
     public async Task SubscribeAndAllowSnsAsync(string queueUrl)
     {
-        // 1. Get ARNs for both resources
-        var attributes = await _sqsClient.GetQueueAttributesAsync(queueUrl, new List<string> { "QueueArn" });
-        var queueArn = attributes.QueueARN;
+        // Get ARNs for topic and queue
+        CreateTopicResponse topicResponse = await _snsClient.CreateTopicAsync(_topicName);
+        string topicArn = topicResponse.TopicArn;
 
-        var topicResponse = await _snsClient.CreateTopicAsync(_topicName);
-        var topicArn = topicResponse.TopicArn;
+        GetQueueAttributesResponse attributes = await _sqsClient.GetQueueAttributesAsync(queueUrl, new List<string> { "QueueArn" });
+        string queueArn = attributes.QueueARN;
 
-        // 2. Create the Subscription
+        // Subscribe
         await _snsClient.SubscribeAsync(topicArn, "sqs", queueArn);
 
-        // 3. Create and Apply the Policy (The "Door Unlock")
+        // Apply policy
         var policy = $@"{{
             ""Version"": ""2012-10-17"",
             ""Statement"": [{{
@@ -57,7 +58,7 @@ public class SqsQueueManager
             }}]
         }}";
 
-        var attrRequest = new SetQueueAttributesRequest
+        SetQueueAttributesRequest attrRequest = new SetQueueAttributesRequest
         {
             QueueUrl = queueUrl,
             Attributes = new Dictionary<string, string> { { "Policy", policy } }
