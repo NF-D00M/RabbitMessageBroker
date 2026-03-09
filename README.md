@@ -39,6 +39,7 @@ This project is designed to evaluate and compare the performance of three popula
 - SNS provides pub/sub messaging, SQS provides queue-based decoupling and reliable delivery.
 - Scales automatically, integrates natively with other AWS services.
 - No infrastructure management required; pay-as-you-go pricing.
+-- First million requests per month are free
 - Suitable for cloud-native, distributed, and event-driven architectures.
 
 **Protocol Used:**
