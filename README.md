@@ -194,4 +194,60 @@ The `KafkaMessageConsumer` subscribes to a topic specified in its configuration.
      ```
 ---
 
+## AWS Usage Guide
+
+### Prerequisites
+
+AWS SNS and SQS must be available in your AWS account.  
+- AWS credentials (Access Key ID and Secret Access Key) must be configured for local development.
+- Region: Specify your AWS region (e.g., `ap-southeast-4`) in configuration.
+
+**AWS Setup:**
+- Create an SNS topic in the AWS Console or programmatically.
+- Create an SQS queue and subscribe it to the SNS topic.
+- Ensure your IAM user has permissions for SNS and SQS actions.
+
+**Local Development:**
+- Install AWS CLI and configure credentials:  
+```
+  aws configure
+```
+- Optionally, use [LocalStack](https://github.com/localstack/localstack) for local AWS service emulation.
+
+---
+
+### Configuring SNS Topics and SQS Queues
+
+**In the AwsMessageBroker app:**
+- SNS topic name is configured in `appsettings.json`.
+- The SNS topic manager creates topics if it does not exist.
+
+---
+
+### Consuming Messages from SQS
+
+The `SqsConsumerService` polls the configured SQS queue for messages.
+
+**Queue configuration:**
+- Set the queue name in AwsMessageConsumer `appsettings.json`.
+- The consumer automatically processes messages as they arrive.
+
+**Example workflow:**
+
+1. **Configure topic** in AwsMessageBroker `appsettings.json`.
+2. **Run AwsMessageBroker** to ensure topic exists.
+3. **Configure queue name** in AwsMessageConsumer `appsettings.json`.
+4. **Run AwsMessageConsumer** to start polling and processing messages.
+5. **Test publishing messages to SNS topic:**
+ - Example endpoint:
+   - `https://localhost:7117/aws/publish`
+ - Example payload:
+   ```json
+   {
+       "message": "This message is from Postman",
+       "subject": "PerformanceTest"
+     }
+     ```
+---
+
 
