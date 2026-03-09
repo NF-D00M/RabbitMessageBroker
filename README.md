@@ -38,10 +38,13 @@ This project is designed to evaluate and compare the performance of two popular 
 
 ### Prerequisites 
 
-Rabbit is running. Environment is Development
+RabbitMQ must be installed and running. Environment is Development
 - URL: http://127.0.0.1:15672/
 - User: guest
 - Password: guest
+
+**RabbitMQ Installation:**
+- Download and install RabbitMQ from [https://www.rabbitmq.com/download.html](https://www.rabbitmq.com/download.html)
 
 To use RabbitMQ in this project:
 
@@ -85,5 +88,84 @@ To use RabbitMQ in this project:
      }
      ```
    - When RabbitMessageConsumer is started, messages with higher priority are received first.
+
+---
+
+## Kafka Usage Guide
+
+### Prerequisites
+
+Kafka is a standalone product that runs on the Java Virtual Machine (JVM). Before using Kafka in this project, you must start a Kafka broker outside the .NET solution.
+
+**Kafka Installation:**
+- Download and install Apache Kafka from [https://kafka.apache.org/downloads](https://kafka.apache.org/downloads)
+
+**To start Kafka on Windows:**
+```
+C:\kafka_2.13-4.2.0\bin\windows\kafka-server-start.bat C:\kafka_2.13-4.2.0\config\server.properties
+```
+Ensure you have Java installed and the Kafka distribution extracted to the specified path.
+
+---
+
+### Setting Topics and Partitions
+
+Kafka organizes messages into **topics**, which are further divided into **partitions**. Topics allow you to categorize messages, while partitions enable parallelism and scalability. More partitions allow higher throughput and distributed processing, but require careful management of ordering and consumer load.
+
+**In the KafkaMessageBroker app:**
+- The topic name and partition count are configured in `appsettings.json`.
+- Setting the topic and partition count is crucial for performance and scalability. Each partition can be processed independently, allowing multiple consumers to read from the same topic in parallel.
+
+---
+
+### Subscribing to a Topic in KafkaMessageConsumer
+
+The `KafkaMessageConsumer` subscribes to a topic specified in its configuration. Subscription is handled in code via:
+```
+consumer.Subscribe(_config.GetSection("Kafka:Topic").Value);
+```
+**Key configuration options:**
+- **AutoOffsetReset**: Determines where the consumer starts reading if no offset is present.  
+  - `Earliest`: Reads all available messages from the beginning.
+  - `Latest`: Reads only new messages arriving after subscription.
+- **GroupId**: Consumers with the same group ID share the workload for a topic. Each message is delivered to one consumer in the group. Changing the group ID will cause the consumer to start from the offset defined by `AutoOffsetReset`.
+- **Topic**: Must match the topic created in KafkaMessageBroker and set in `appsettings.json`.
+
+**Caveats:**
+- If `AutoOffsetReset` is set to `Earliest`, the consumer will process all messages in the topic from the beginning if no prior offset exists for the group.
+- If `EnableAutoCommit` is true, offsets are committed automatically, which can affect message replay and recovery.
+- Changing the `GroupId` or subscribing to a new topic will reset the offset behavior according to `AutoOffsetReset`.
+- Ensure the topic exists and matches the configuration, otherwise the consumer will fail to subscribe.
+
+---
+
+### Example Workflow
+
+1. **Start Kafka broker** as described above.
+2. **Configure topic and partitions** in KafkaMessageBroker `appsettings.json`.
+3. **Run KafkaMessageBroker** to create the topic.
+4. **Configure topic and group ID** in KafkaMessageConsumer `appsettings.json`.
+5. **Run KafkaMessageConsumer** to subscribe and process messages.
+
+---
+
+## Feature Comparison: Kafka vs RabbitMQ (Pub/Sub)
+
+| Feature                | RabbitMQ (Pub/Sub)                                  | Kafka (Pub/Sub)                                      |
+|------------------------|-----------------------------------------------------|------------------------------------------------------|
+| Protocol               | AMQP                                                | Kafka TCP protocol                                   |
+| Message Durability     | Persistent queues, configurable per message/queue   | Always persistent, log-based storage                 |
+| Ordering Guarantees    | Per queue, can be affected by consumer concurrency  | Per partition, strict ordering within partition      |
+| Scalability            | Scales with exchanges/queues, clustering supported  | Scales with partitions, distributed by design        |
+| Consumer Model         | Push-based, consumers receive messages as delivered | Pull-based, consumers fetch messages on demand       |
+| Replay/Recovery        | Limited, requires dead-letter or manual handling    | Built-in, consumers can replay from any offset       |
+| Message Acknowledgment | Manual or automatic, supports retries               | Offset commit, manual or automatic                   |
+| Routing Flexibility    | Exchanges (direct, topic, fanout, headers)          | Topics only, no built-in routing                     |
+| Management UI          | Web-based management interface                      | No official UI, third-party tools (e.g., Confluent)  |
+| Transaction Support    | Yes, supports transactions                          | Limited, idempotency via producer/consumer configs   |
+| Delivery Guarantees    | At-most-once, at-least-once, exactly-once (with tx) | At-most-once, at-least-once, exactly-once (with tx) |
+| Consumer Groups        | Not native, can be emulated with queues             | Native, enables parallel processing                  |
+| Message TTL            | Supported                                           | Not natively supported                               |
+| Use Cases              | Task queues, transactional messaging, RPC           | Event streaming, log aggregation, analytics          |
 
 ---

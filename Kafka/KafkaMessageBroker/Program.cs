@@ -9,11 +9,13 @@ builder.Services.AddControllers();
 
 WebApplication app = builder.Build();
 
+IConfiguration _config = app.Configuration;
+
 // Add Topic
 using (IServiceScope scope = app.Services.CreateScope())
 {
     var manager = scope.ServiceProvider.GetRequiredService<KafkaTopicManager>();
-    await manager.CreateTopicIfNotExists("test-topic", partitions: 3);
+    await manager.CreateTopicIfNotExists(_config.GetValue<string>("Kafka:Topic"), partitions: 3);
 }
 
 app.MapControllers();
