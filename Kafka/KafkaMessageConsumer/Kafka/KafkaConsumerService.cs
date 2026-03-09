@@ -20,7 +20,7 @@ namespace KafkaMessageConsumer.Kafka
             {
                 BootstrapServers = _config["Kafka:BootstrapServers"],
                 GroupId = _config["Kafka:GroupId"],
-                AutoOffsetReset = AutoOffsetReset.Latest,
+                AutoOffsetReset = AutoOffsetReset.Earliest, // Earliest (gets all messages on log, latest gets newest message on log)
                 EnableAutoCommit = true
             };
 
